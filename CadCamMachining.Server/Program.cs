@@ -41,8 +41,9 @@ builder.Services.ConfigureApplicationCookie(options =>
     };
 });
 
-
+builder.Services.AddSwaggerGen();
 builder.Services.AddControllersWithViews();
+builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddRazorPages();
 
 var app = builder.Build();
@@ -68,8 +69,13 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.UseSwagger();
+app.UseSwaggerUI();
+
 app.MapRazorPages();
 app.MapControllers();
 app.MapFallbackToFile("index.html");
+
+app.MapSwagger().RequireAuthorization();
 
 app.Run();

@@ -13,4 +13,4 @@
       - "1433:1433"
     environment:
       - ACCEPT_EULA=y
-      - SA_PASSWORD=A&VeryComplex123Password
+      - SA_PASSWORD=A!VeryComplex123Password
