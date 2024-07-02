@@ -1,5 +1,6 @@
 using CadCamMachining.Server.Data;
 using CadCamMachining.Server.Models;
+using CadCamMachining.Shared;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -73,8 +74,12 @@ namespace CadCamMachining.Server.Controllers
         // POST: api/Contact
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Contact>> PostContact(Contact contact)
+        public async Task<ActionResult<Contact>> PostContact(ContactParameter contactParameter)
         {
+            var contact = new Contact()
+            {
+                FirstName = contactParameter.Name
+            };
             _context.Contact.Add(contact);
             await _context.SaveChangesAsync();
 

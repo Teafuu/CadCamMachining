@@ -1,16 +1,14 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using CadCamMachining.Server.Data;
 using CadCamMachining.Server.Models;
+using CadCamMachining.Shared;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace CadCamMachining.Server.Controllers
 {
     [Route("api/[controller]")]
+    [Authorize]
     [ApiController]
     public class CustomerController : ControllerBase
     {
@@ -76,8 +74,14 @@ namespace CadCamMachining.Server.Controllers
         // POST: api/Customer
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Customer>> PostCustomer(Customer customer)
+        public async Task<ActionResult<Customer>> PostCustomer(CustomerParameter customerParameter)
         {
+            var customer = new Customer
+            {
+                Name = customerParameter.Name,
+                Address = customerParameter.Address
+            };
+            
             _context.Customers.Add(customer);
             await _context.SaveChangesAsync();
 
