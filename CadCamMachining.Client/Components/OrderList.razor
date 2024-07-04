@@ -1,5 +1,26 @@
-﻿@attribute [Authorize]
+﻿@using CadCamMachining.Shared.Models
+@using MudBlazor
 
-@code {
-    
+<MudThemeProvider IsDarkMode="true" />
+
+
+<MudDataGrid T="Order" Items="Orders" PageSize="10" >
+    <Columns>
+        <PropertyColumn Property="x => x.OrderNo" Title="Order No" />
+        <PropertyColumn Property="x => x.Name" Title="Name" />
+        <PropertyColumn Property="x => x.LastUpdated" Title="Last Updated" />
+        <TemplateColumn CellClass="d-flex justify-end">
+            <CellTemplate>
+                <MudStack Row>
+                    <MudButton Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary">Edit</MudButton>
+                </MudStack>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+</MudDataGrid>
+
+@code 
+{
+    [Parameter]
+    public List<Order> Orders { get; set; }
 }

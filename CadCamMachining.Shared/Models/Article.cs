@@ -1,4 +1,6 @@
-﻿namespace CadCamMachining.Server.Models;
+﻿using System;
+
+namespace CadCamMachining.Shared.Models;
 
 public class Article
 {
@@ -9,14 +11,14 @@ public class Article
     public Part Part { get; set; }
 
     public Material Material { get; set; }
-
+    
     public Order Order { get; set; }
     
     public double Price { get; set; }
     
     public int Quantity { get; set; }
     
-    public ArticleStatus Status { get; set; }
+    public Article Status { get; set; }
     
     public DateTime LastUpdated { get; set; }
 }

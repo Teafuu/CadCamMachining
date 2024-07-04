@@ -14,7 +14,7 @@ namespace CadCamMachining.Server.Data
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
-            Database.Migrate();
+            new DataGenerator(this);
         }
         
         public DbSet<Article> Articles { get; set; }
@@ -24,9 +24,15 @@ namespace CadCamMachining.Server.Data
         public DbSet<Material> Materials { get; set; }
         
         public DbSet<Order> Orders { get; set; }
-        
+
         public DbSet<Customer> Customers { get; set; }
-        
+
+        public DbSet<ArticleStatus> ArticleStatuses { get; set; }
+
+        public DbSet<OrderStatus> OrderStatuses { get; set; }
+
+        public DbSet<Contact> Contacts { get; set; }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             base.OnConfiguring(optionsBuilder);
@@ -40,11 +46,21 @@ namespace CadCamMachining.Server.Data
             builder.Entity<Customer>().HasMany(x => x.Orders);
             
             builder.Entity<Article>().HasOne(x => x.Order);
-            builder.Entity<Article>().HasOne(x => x.Part);
 
             builder.Entity<Order>().HasOne(x => x.Customer);
             builder.Entity<Order>().HasMany(x => x.Articles);
+            builder.Entity<Order>().HasOne(x => x.Status);
+            builder.Entity<Order>().HasOne(x => x.InCharge).WithMany(x => x.Orders).IsRequired(false);
+
+            builder.Entity<Order>()
+                .HasOne(o => o.InCharge)
+                .WithMany(u => u.Orders)
+                .IsRequired(false);  // This makes the foreign key optional
+
+            builder.Entity<ApplicationUser>()
+                .HasMany(u => u.Orders)
+                .WithOne(o => o.InCharge)
+                .IsRequired(false); // This makes the foreign key optional
+            }
         }
-        public DbSet<CadCamMachining.Server.Models.Contact> Contact { get; set; } = default!;
-    }
 }

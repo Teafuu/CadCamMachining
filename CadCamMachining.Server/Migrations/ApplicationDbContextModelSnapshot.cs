@@ -113,7 +113,7 @@ namespace CadCamMachining.Server.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
-                    b.Property<string>("Status")
+                    b.Property<string>("ArticleStatus")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -217,7 +217,7 @@ namespace CadCamMachining.Server.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Status")
+                    b.Property<string>("ArticleStatus")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 

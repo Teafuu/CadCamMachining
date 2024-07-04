@@ -1,6 +1,32 @@
 ﻿@page "/OrderOverview"
-<h3>Order</h3>
+@using CadCamMachining.Shared.Models
+@using MudBlazor
+@inject IDialogService DialogService
 
-@code {
-    
+<MudLayout>
+    <MudButton OnClick="@OpenDialogAsync" Class="align-end" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary">Add</MudButton>
+    <OrderList Orders="_orders"/>
+</MudLayout>
+
+@code 
+{
+    private List<Order> _orders = new List<Order>()
+    {
+        new Order { Customer = new Customer() { Name = "CadCam" }, Name = "SUPER ORDER", OrderNo = "31423", LastUpdated = DateTime.Now },
+        new Order { Customer = new Customer() { Name = "Torvalds" }, Name = "ANOTHER", OrderNo = "53223", LastUpdated = DateTime.Now },
+        new Order { Customer = new Customer() { Name = "Terraform" }, Name = "SUPER ORDER", OrderNo = "31423", LastUpdated = DateTime.Now },
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.CompletedTask; // Simulate async call
+    }
+
+
+    private Task OpenDialogAsync()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+
+        return DialogService.ShowAsync<OrderCreateDialog>("Simple Dialog", options);
+    }   
 }
