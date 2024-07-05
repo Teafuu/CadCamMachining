@@ -1,9 +1,8 @@
 ﻿using Microsoft.AspNetCore.Identity;
 
-namespace CadCamMachining.Server.Models
+namespace CadCamMachining.Server.Models;
+
+public class ApplicationUser : IdentityUser<Guid>
 {
-    public class ApplicationUser : IdentityUser<Guid>
-    {
-        public ICollection<Order>? Orders { get; set; } = new List<Order>();
-    }
+    public ICollection<Order>? Orders { get; set; } = new List<Order>();
 }
