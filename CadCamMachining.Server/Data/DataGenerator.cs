@@ -9,6 +9,7 @@ public class DataGenerator
 
     public DataGenerator(ApplicationDbContext context)
     {
+        return;
         _context = context;
         context.Database.EnsureDeleted();
         context.Database.EnsureCreated();

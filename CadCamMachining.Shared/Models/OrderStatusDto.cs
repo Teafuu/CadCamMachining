@@ -1,6 +1,6 @@
 ﻿namespace CadCamMachining.Shared.Models;
 
-public class ArticleStatus
+public class OrderStatusDto
 {
     public string Name { get; set; }
 }

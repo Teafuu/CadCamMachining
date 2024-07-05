@@ -1,5 +1,6 @@
 ﻿using CadCamMachining.Client.Services.Contracts;
-using CadCamMachining.Shared;
+using CadCamMachining.Shared.Models;
+using CadCamMachining.Shared.Parameters;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using System;
@@ -45,9 +46,9 @@ public class AuthorizeApi : IAuthorizeApi
         result.EnsureSuccessStatusCode();
     }
 
-    public async Task<UserInfo> GetUserInfo()
+    public async Task<UserInfoDto> GetUserInfo()
     {
-        var result = await _httpClient.GetFromJsonAsync<UserInfo>("api/Authorize/UserInfo");
+        var result = await _httpClient.GetFromJsonAsync<UserInfoDto>("api/Authorize/UserInfo");
         return result;
     }
 }

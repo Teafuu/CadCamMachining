@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace CadCamMachining.Shared.Models;
 
-public class Customer
+public class CustomerDto
 {
     public Guid Id { get; set; }
     
@@ -11,9 +11,9 @@ public class Customer
     
     public string Address { get; set; }
     
-    public ICollection<Contact> Contacts { get; set; }
+    public ICollection<ContactDto> Contacts { get; set; }
     
-    public ICollection<Order> Orders { get; set; }
+    public ICollection<OrderDto> Orders { get; set; }
     
     public DateTime LastUpdated { get; set; }
 }

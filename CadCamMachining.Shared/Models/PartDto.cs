@@ -2,7 +2,7 @@
 
 namespace CadCamMachining.Shared.Models;
 
-public class Part
+public class PartDto
 {
     public Guid Id { get; set; }
     

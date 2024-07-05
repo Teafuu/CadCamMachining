@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
 
-namespace CadCamMachining.Shared;
+namespace CadCamMachining.Shared.Parameters;
 
-public class RegisterParameters
+public class LoginParameters
 {
     [Required]
     public string UserName { get; set; }
@@ -13,7 +13,5 @@ public class RegisterParameters
     [Required]
     public string Password { get; set; }
 
-    [Required]
-    [Compare(nameof(Password), ErrorMessage = "Passwords do not match")]
-    public string PasswordConfirm { get; set; }
+    public bool RememberMe { get; set; }
 }

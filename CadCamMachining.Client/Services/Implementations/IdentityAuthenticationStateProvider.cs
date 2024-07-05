@@ -1,5 +1,6 @@
 ﻿using CadCamMachining.Client.Services.Contracts;
-using CadCamMachining.Shared;
+using CadCamMachining.Shared.Models;
+using CadCamMachining.Shared.Parameters;
 using Microsoft.AspNetCore.Components.Authorization;
 using System.Security.Claims;
 
@@ -7,7 +8,7 @@ namespace CadCamMachining.Client.States;
 
 public class IdentityAuthenticationStateProvider : AuthenticationStateProvider
 {
-    private UserInfo _userInfoCache;
+    private UserInfoDto _userInfoDtoCache;
     private readonly IAuthorizeApi _authorizeApi;
 
     public IdentityAuthenticationStateProvider(IAuthorizeApi authorizeApi)
@@ -30,15 +31,15 @@ public class IdentityAuthenticationStateProvider : AuthenticationStateProvider
     public async Task Logout()
     {
         await _authorizeApi.Logout();
-        _userInfoCache = null;
+        _userInfoDtoCache = null;
         NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
     }
 
-    private async Task<UserInfo> GetUserInfo()
+    private async Task<UserInfoDto> GetUserInfo()
     {
-        if (_userInfoCache != null && _userInfoCache.IsAuthenticated) return _userInfoCache;
-        _userInfoCache = await _authorizeApi.GetUserInfo();
-        return _userInfoCache;
+        if (_userInfoDtoCache != null && _userInfoDtoCache.IsAuthenticated) return _userInfoDtoCache;
+        _userInfoDtoCache = await _authorizeApi.GetUserInfo();
+        return _userInfoDtoCache;
     }
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()

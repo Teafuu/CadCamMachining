@@ -2,7 +2,7 @@
 
 namespace CadCamMachining.Shared.Models;
 
-public class Material
+public class MaterialDto
 {
     public Guid Id { get; set; }
     

@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 
-namespace CadCamMachining.Shared;
+namespace CadCamMachining.Shared.Models;
 
-public class UserInfo
+public class UserInfoDto
 {
     public bool IsAuthenticated { get; set; }
     public string UserName { get; set; }

@@ -1,4 +1,4 @@
-﻿namespace CadCamMachining.Shared;
+﻿namespace CadCamMachining.Shared.Parameters;
 
 public class ContactParameter
 {

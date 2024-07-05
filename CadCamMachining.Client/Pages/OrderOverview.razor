@@ -2,6 +2,7 @@
 @using CadCamMachining.Shared.Models
 @using MudBlazor
 @inject IDialogService DialogService
+@inject OrderFacade OrderFacade
 
 <MudLayout>
     <MudButton OnClick="@OpenDialogAsync" Class="align-end" Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary">Add</MudButton>
@@ -10,16 +11,14 @@
 
 @code 
 {
-    private List<Order> _orders = new List<Order>()
-    {
-        new Order { Customer = new Customer() { Name = "CadCam" }, Name = "SUPER ORDER", OrderNo = "31423", LastUpdated = DateTime.Now },
-        new Order { Customer = new Customer() { Name = "Torvalds" }, Name = "ANOTHER", OrderNo = "53223", LastUpdated = DateTime.Now },
-        new Order { Customer = new Customer() { Name = "Terraform" }, Name = "SUPER ORDER", OrderNo = "31423", LastUpdated = DateTime.Now },
-    };
+    private ICollection<OrderDto> _orders = new List<OrderDto>();
 
     protected override async Task OnInitializedAsync()
     {
-        await Task.CompletedTask; // Simulate async call
+        var orders = await OrderFacade.GetOrdersAsync();
+        _orders = orders;
+
+        OrderFacade.OrdersUpdated += HandleOrdersUpdates;
     }
 
 
@@ -28,5 +27,16 @@
         var options = new DialogOptions { CloseOnEscapeKey = true };
 
         return DialogService.ShowAsync<OrderCreateDialog>("Simple Dialog", options);
-    }   
+    }
+
+    private void HandleOrdersUpdates(object sender, ICollection<OrderDto> orders)
+    {
+        _orders = orders;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        OrderFacade.OrdersUpdated -= HandleOrdersUpdates;
+    }
 }

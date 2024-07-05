@@ -1,4 +1,5 @@
 ﻿using CadCamMachining.Server.Data;
+using CadCamMachining.Server.Hub;
 using CadCamMachining.Server.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -41,11 +42,18 @@ builder.Services.ConfigureApplicationCookie(options =>
     };
 });
 
+builder.Services.AddSignalR();
+
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllersWithViews().AddNewtonsoftJson(options =>
     options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
+
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddRazorPages();
+builder.Services.AddRazorPages();   
+
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+
 
 var app = builder.Build();
 
@@ -75,6 +83,7 @@ app.UseSwaggerUI();
 
 app.MapRazorPages();
 app.MapControllers();
+app.MapHub<OrderHub>("/orderHub");
 app.MapFallbackToFile("index.html");
 
 app.MapSwagger().RequireAuthorization();

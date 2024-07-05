@@ -1,5 +1,6 @@
 ﻿using CadCamMachining.Server.Models;
-using CadCamMachining.Shared;
+using CadCamMachining.Shared.Models;
+using CadCamMachining.Shared.Parameters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -57,16 +58,16 @@ public class AuthorizeController : ControllerBase
     }
 
     [HttpGet]
-    public UserInfo UserInfo()
+    public UserInfoDto UserInfo()
     {
         //var user = await _userManager.GetUserAsync(HttpContext.User);
         return BuildUserInfo();
     }
 
 
-    private UserInfo BuildUserInfo()
+    private UserInfoDto BuildUserInfo()
     {
-        return new UserInfo
+        return new UserInfoDto
         {
             IsAuthenticated = User.Identity.IsAuthenticated,
             UserName = User.Identity.Name,

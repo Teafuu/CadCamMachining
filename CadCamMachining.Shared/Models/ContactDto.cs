@@ -2,7 +2,7 @@
 
 namespace CadCamMachining.Shared.Models;
 
-public class Contact
+public class ContactDto
 {
     public Guid Id { get; set; }
     
@@ -12,7 +12,7 @@ public class Contact
     
     public string PhoneNumber { get; set; }
     
-    public Customer Customer { get; set; }
+    public CustomerDto CustomerDto { get; set; }
     
     public DateTime LastUpdated { get; set; }
 }

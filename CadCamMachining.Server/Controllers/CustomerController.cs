@@ -1,6 +1,6 @@
 using CadCamMachining.Server.Data;
 using CadCamMachining.Server.Models;
-using CadCamMachining.Shared;
+using CadCamMachining.Shared.Parameters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;

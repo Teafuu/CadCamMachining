@@ -4,7 +4,7 @@
 <MudThemeProvider IsDarkMode="true" />
 
 
-<MudDataGrid T="Order" Items="Orders" PageSize="10" >
+<MudDataGrid T="OrderDto" Items="Orders" PageSize="10" >
     <Columns>
         <PropertyColumn Property="x => x.OrderNo" Title="Order No" />
         <PropertyColumn Property="x => x.Name" Title="Name" />
@@ -22,5 +22,5 @@
 @code 
 {
     [Parameter]
-    public List<Order> Orders { get; set; }
+    public ICollection<OrderDto> Orders { get; set; }
 }

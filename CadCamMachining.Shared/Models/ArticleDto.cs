@@ -2,23 +2,23 @@
 
 namespace CadCamMachining.Shared.Models;
 
-public class Article
+public class ArticleDto
 {
     public Guid Id { get; set; }
     
     public string Name { get; set; }
     
-    public Part Part { get; set; }
+    public PartDto PartDto { get; set; }
 
-    public Material Material { get; set; }
+    public MaterialDto MaterialDto { get; set; }
     
-    public Order Order { get; set; }
+    public OrderDto OrderDto { get; set; }
     
     public double Price { get; set; }
     
     public int Quantity { get; set; }
     
-    public Article Status { get; set; }
+    public ArticleDto Status { get; set; }
     
     public DateTime LastUpdated { get; set; }
 }
