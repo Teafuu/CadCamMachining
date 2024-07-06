@@ -1,0 +1,197 @@
+﻿@inject ItemFacade ItemFacade
+@inject LayoutFacade LayoutFacade
+@inject ILogger<LayoutCreator> Logger
+@page "/layoutcreator"
+@using MudBlazor.Utilities
+@attribute [Authorize]
+
+@code
+{
+    public List<LayoutDto> Layouts = new();
+
+    public LayoutDto? Layout
+    {
+        get => _layout;
+        set
+        {
+            _layout = value;
+            if(_layout is not null)
+                OnLayoutLoad();
+        }
+    }
+
+    private ICollection<ItemTypeDto> itemTypes = new List<ItemTypeDto>();
+
+    private ItemTypeDto selectedItemType;
+
+    private string selectedComponent = string.Empty;
+
+    private MudDropContainer<ComponentDto> dropContainer;
+
+    private bool isLoaded = false;
+
+    private LayoutDto? _layout = new();
+
+    private bool cantClick => selectedItemType == null || selectedComponent == string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        itemTypes = await ItemFacade.GetItemTypesAsync();
+        Layouts = await LayoutFacade.GetLayouts();
+    }
+}
+
+<MudContainer MaxWidth="MaxWidth.Medium">
+    <MudPaper Class="pa-4">
+        <MudItem xs="12">
+            <MudSelect ToStringFunc="@(e=> $"")" HelperText="Layouts" T="LayoutDto" @bind-value="Layout">
+                @foreach (var layout in Layouts)
+                {
+                    <MudSelectItem T="LayoutDto" Value="layout">@(layout.Name)</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12">
+            <MudSelect T="string" @bind-Value="selectedComponent"
+                       HelperText="Select a component to add">
+                <MudSelectItem Value="nameof(ItemList)">Item List</MudSelectItem>
+                <MudSelectItem Value="nameof(ItemDetails)">Item Details</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12">
+            <MudStack Row="true">
+                <MudSelect HelperText="Which item type should this component have?"
+                           @bind-Value="selectedItemType">
+                    @foreach (var itemType in itemTypes)
+                    {
+                        <MudSelectItem T="ItemTypeDto" Value="itemType">@itemType.Name</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Disabled="@cantClick" OnClick="AddComponent">Add Component</MudButton>
+            </MudStack>
+        </MudItem>
+        <MudItem xs="12">
+            <MudTextField @bind-Value="Layout.Name" HelperText="Layout Name" />
+
+            @if (isLoaded)
+            {
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="CreateLayout">New Layout</MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small" OnClick="DeleteLayout">Delete Layout</MudButton>
+            }
+            <MudButton Variant="Variant.Filled" Color="Color.Tertiary" Size="Size.Small" OnClick="SaveLayout">Save Layout</MudButton>
+        </MudItem>
+    </MudPaper>
+</MudContainer>
+
+<MudDropContainer @ref="dropContainer" T="ComponentDto" Items="Layout.Components" ItemsSelector="@((item, dropzone) => item.DropzoneIdentifier == dropzone)" ItemDropped="ItemUpdated" Class="d-flex flex-wrap flex-grow-1">
+    <ChildContent>
+        <MudDropZone AllowReorder="true" T="ComponentDto" Identifier="1" Class="rounded mud-background-gray pa-6 flex-grow-1">
+        </MudDropZone>
+        <MudDropZone AllowReorder="true" T="ComponentDto" Identifier="2" Class="rounded mud-background-gray pa-6 flex-grow-1">
+        </MudDropZone>
+    </ChildContent>
+    <ItemRenderer Context="item">
+        <MudContainer Class="pa-1">
+            <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Remove" OnClick="() => RemoveComponent(item)"></MudIconButton>
+            @RenderDropItem(item)
+        </MudContainer>
+    </ItemRenderer>
+</MudDropContainer>
+
+@code
+{
+    private async void RemoveComponent(ComponentDto component)
+    {
+        Layout.Components.Remove(component);
+        StateHasChanged();
+        dropContainer.Refresh();
+    }
+    private void CreateLayout()
+    {
+        Layout = new LayoutDto();
+
+        StateHasChanged();
+        dropContainer.Refresh();
+    }
+
+    private async Task DeleteLayout()
+    {
+        await LayoutFacade.RemoveLayout(Layout);
+        Layout = new LayoutDto();
+        isLoaded = false;
+        StateHasChanged();
+        dropContainer.Refresh();
+    }
+
+    private void AddComponent()
+    {
+        Logger.LogInformation("Adding new layout");
+
+        var component = new ComponentDto()
+            {
+                ComponentType = selectedComponent,
+                ItemTypeId = selectedItemType.Id,
+                DropzoneIdentifier = "1"
+            };
+
+        Layout.Components.Add(component);
+        StateHasChanged();
+        dropContainer.Refresh();
+    }
+
+    private async Task SaveLayout()
+    {
+        Layout.Components = Layout.Components.OrderBy(x => x.Index).ToList();
+
+        if (Layout.Id == string.Empty)
+        {
+            await LayoutFacade.CreateLayout(Layout);
+        }
+        else
+        {
+            await LayoutFacade.UpdateLayout(Layout);
+        }
+
+    }
+    private void ItemUpdated(MudItemDropInfo<ComponentDto> dropItem)
+    {
+        dropItem.Item.DropzoneIdentifier = dropItem.DropzoneIdentifier;
+
+        var indexOffset = dropItem.DropzoneIdentifier switch
+        {
+            "2" => Layout.Components.Count(x => x.DropzoneIdentifier == "1"),
+            _ => 0,
+        };
+
+        Layout.Components.UpdateOrder(dropItem, item => item.Index, indexOffset);
+    }
+
+    private RenderFragment<ComponentDto> RenderDropItem => item => builder =>
+    {
+        if (item is null)
+            return;
+
+        if (item.ComponentType == nameof(ItemList))
+        {
+            builder.OpenComponent(0, typeof(ItemList));
+            builder.AddAttribute(1, "ItemTypeId", item.ItemTypeId);
+            builder.CloseComponent();
+        }
+        else if (item.ComponentType == nameof(ItemDetails))
+        {
+            builder.OpenComponent(0, typeof(ItemDetails));
+            builder.AddAttribute(1, "ItemTypeId", item.ItemTypeId);
+            builder.CloseComponent();
+        }
+    };
+
+    private void OnLayoutLoad()
+    {
+        Console.WriteLine($"Amount of components in this layout: {Layout.Name}");
+        if(Layout.Id != string.Empty)
+            isLoaded = true;
+
+        StateHasChanged();
+        dropContainer.Refresh();
+    }
+}

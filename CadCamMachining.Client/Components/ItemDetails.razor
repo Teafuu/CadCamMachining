@@ -1,0 +1,296 @@
+﻿@inject NavigationManager NavigationManager
+@inject ItemFacade ItemFacade;
+@inject ItemSelectionManager ItemSelectionManager
+@using System.Security.Cryptography.X509Certificates
+@inherits LayoutComponentBase
+@inject ILogger<ItemDetails> Logger
+@attribute [Authorize]
+
+@code
+{
+    [Parameter]
+    public string ItemTypeId { get; set; }
+
+    public ItemTypeDto ItemType;
+
+    public ItemDto CurrentItem;
+
+    private bool isAddingItem = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var allItemTypes = await ItemFacade.GetItemTypesAsync();
+
+            ItemType = allItemTypes?.FirstOrDefault(x => x.Id == ItemTypeId);
+
+            if (ItemType is null)
+            {
+                Logger.LogCritical($"Failed loading Item Details with Type ID {ItemTypeId}");
+                return;
+            }
+
+            if (ItemSelectionManager.SelectedItems.TryGetValue(ItemType.Id, out var selectedItem))
+            {
+                CurrentItem = selectedItem;
+            }
+
+            ItemSelectionManager.ItemSelectionChanged += ItemSelectionManagerOnItemSelectionChanged;
+
+            ItemFacade.ItemTypesUpdated += ItemFacadeOnItemTypesUpdated;
+        }
+        catch (Exception e)
+        {
+            Logger.LogCritical(e.Message);
+        }
+
+    }
+}
+
+@if (CurrentItem != null)
+{
+    <MudTable Items="CurrentItem.PropertyValues" Hover="true">
+        <ToolBarContent>
+            <MudTextField T="string" Placeholder="@($"{ItemType.Name} Name")" @bind-Value="CurrentItem.Name" Immediate="true" OnBlur="@(async () => await HandleFocusOut())" />
+        </ToolBarContent>
+        <RowTemplate>
+            <MudTd DataLabel="Property Name">@ItemType.Properties.FirstOrDefault(x => x.Id == context.ItemPropertyId)?.Name</MudTd>
+            <MudTd DataLabel="Value">
+                @if (context is StringPropertyValueDto stringProp)
+                {
+                    <MudTextField @bind-Value="stringProp.Value" Immediate="true" OnBlur="@(async () => await HandleFocusOut())" />
+                }
+                else if (context is BoolPropertyValueDto boolProp)
+                {
+                    <MudSwitch T="bool" Value="boolProp.Value" ValueChanged="@(async (e) => await HandleCheckedChanged(context.ItemPropertyId, e))" Color="Color.Tertiary" Immediate="true" OnBlur="@(async () => await HandleFocusOut())" />
+                }
+                else if (context is DateTimePropertyValueDto dateProp)
+                {
+                    <MudDatePicker @bind-Date="dateProp.Value" ShowToolbar="false" OnClose="@(async () => await HandleFocusOut())" />
+                }
+                else if (context is EnumPropertyValueDto enumProp)
+                {
+                    <MudSelect T="string" Value="enumProp.Value" ValueChanged="@(async (e) => await HandleEnumValueChanged(context.ItemPropertyId, e))">
+                        @foreach (var option in ((EnumPropertyDto)ItemType.Properties.FirstOrDefault(x => x.Id == context.ItemPropertyId)).Options)
+                        {
+                            <MudSelectItem Value="@option">@option</MudSelectItem>
+                        }
+                    </MudSelect>
+                }
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+
+    <MudTable T="ItemTypeConnectionDto" Items="ItemType.ChildConnections">
+        <RowTemplate>
+            <MudTd DataLabel="Item Type">
+                <MudAutocomplete T="ItemDto"
+                                 ValueChanged="(e) => OnItemChildConnectionAdd(e, context)" 
+                                 SearchFunc="(e, token) => SearchItemThroughConnection(context.ChildItemTypeId, e, token)" 
+                                 HelperText="@ItemFacade.ItemTypes[context.ChildItemTypeId].Name"
+                                 ToStringFunc="@(e=> e==null?null : $"{e.Name}")">
+                </MudAutocomplete>
+            </MudTd>
+            <MudTd DataLabel="Item Connections">
+                @foreach (var itemConnection in CurrentItem.ChildConnections.Where(x => x.ItemTypeConnectionId == context.Id))
+                {
+                    <MudContainer T="ItemDto" Context="item">
+                        <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Remove" OnClick="() => OnItemConnectionRemoved(itemConnection)"></MudIconButton>
+                        <MudButton OnClick="@(() => OnItemConnectionClicked(@ItemFacade.Items[context.ChildItemTypeId].FirstOrDefault(x => x.Id == itemConnection.ChildItemId)))">
+                            @ItemFacade.Items[context.ChildItemTypeId].FirstOrDefault(x => x.Id == itemConnection.ChildItemId).Name
+                        </MudButton>
+                    </MudContainer>
+                }
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+<MudStack Row="true" AlignItems="AlignItems.Start" Class="pa-1">
+    @if (CurrentItem != null)
+    {
+        if (isAddingItem)
+        {
+            <MudItem>
+                <MudButton Variant="Variant.Filled" Color="Color.Tertiary" OnClick="SaveItem">Add</MudButton>
+            </MudItem>
+        }
+        else
+        {
+            <MudItem>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="StartAddItem">Create</MudButton>
+            </MudItem>
+            <MudItem>
+                <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="DeleteItem">Delete Item</MudButton>
+            </MudItem>
+        }
+    }
+    else
+    {
+        <MudItem>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="StartAddItem">Create</MudButton>
+        </MudItem>
+    }
+</MudStack>
+
+
+@code
+{
+    private void OnItemConnectionClicked(ItemDto item)
+    {
+        ItemSelectionManager.SelectItem(item);
+    }
+
+    private async void OnItemConnectionRemoved(ItemConnectionDto itemConnection)
+    {
+        CurrentItem.ChildConnections.Remove(itemConnection);
+        await SaveItem();
+    }
+
+    private async void OnItemChildConnectionAdd(ItemDto item, ItemTypeConnectionDto connection)
+    {
+        CurrentItem.ChildConnections.Add(new ItemConnectionDto()
+        {
+            ParentItemId = CurrentItem.Id,
+            ChildItemId = item.Id,
+            ItemTypeConnectionId = connection.Id
+        });
+
+        await SaveItem();
+    }
+
+    private void StartAddItem()
+    {
+        var newItemDto = new ItemDto()
+        {
+            ItemTypeId = ItemType.Id,
+            PropertyValues = ItemType.Properties?.Select(GetPropertyDto).ToList(),
+        };
+        CurrentItem = newItemDto;
+        isAddingItem = true;
+        StateHasChanged();
+    }
+
+    private async Task SaveItem()
+    {
+        if (string.IsNullOrEmpty(CurrentItem.Id))
+            CurrentItem = await ItemFacade.SaveItem(CurrentItem);
+        else
+            await ItemFacade.UpdateItem(CurrentItem);
+
+        ItemSelectionManager.SelectItem(CurrentItem);
+        isAddingItem = false;
+
+        StateHasChanged();
+    }
+
+    private async Task DeleteItem()
+    {
+        if (CurrentItem is not null && !string.IsNullOrEmpty(CurrentItem.Id))
+        {
+            Console.WriteLine($"Attempting to delete {CurrentItem.Id} by name: {CurrentItem.Name}");
+            await ItemFacade.DeleteItem(CurrentItem.Id);
+            CurrentItem = null;
+            StateHasChanged();
+        }
+    }
+
+    private async void ItemSelectionManagerOnItemSelectionChanged(object? sender, ItemDto e)
+    {
+        if (e.ItemTypeId == ItemTypeId)
+        {
+            var itemToSelect = ItemFacade.Items[e.ItemTypeId].FirstOrDefault(x => x.Id == e.Id);
+
+            CurrentItem = itemToSelect;
+            isAddingItem = false;
+
+            foreach (var childConnections in ItemType.ChildConnections)
+            {
+                if (!ItemFacade.Items.ContainsKey(childConnections.ChildItemTypeId))
+                {
+                    await ItemFacade.GetItemsAsync(ItemFacade.ItemTypes[childConnections.ChildItemTypeId]);
+                }
+            }
+            StateHasChanged();
+        }
+    }
+
+    private ItemPropertyValueDto GetPropertyDto(ItemPropertyDto type) => type.PropertyType switch
+    {
+        PropertyTypeDto.Bool => new BoolPropertyValueDto { ItemPropertyId = type.Id },
+        PropertyTypeDto.DateTime => new DateTimePropertyValueDto { ItemPropertyId = type.Id },
+        PropertyTypeDto.Enum => new EnumPropertyValueDto() { ItemPropertyId = type.Id },
+        PropertyTypeDto.String => new StringPropertyValueDto() { ItemPropertyId = type.Id },
+        _ => throw new InvalidDataException()
+    };
+
+    private async Task HandleFocusOut()
+    {
+        if (isAddingItem)
+            return;
+
+        await SaveItem();
+    }
+
+    private async Task HandleEnumValueChanged(string propertyId, string newValue)
+    {
+        if (CurrentItem != null)
+        {
+            var enumProp = CurrentItem.PropertyValues.OfType<EnumPropertyValueDto>().FirstOrDefault(x => x.ItemPropertyId == propertyId);
+            if (enumProp != null)
+            {
+                enumProp.Value = newValue;
+            }
+            if (!isAddingItem)
+            {
+                await SaveItem();
+            }
+        }
+    }
+
+    private async Task HandleCheckedChanged(string propertyId, bool newValue)
+    {
+        if (CurrentItem != null)
+        {
+            var boolProperty = CurrentItem.PropertyValues.OfType<BoolPropertyValueDto>().FirstOrDefault(x => x.ItemPropertyId == propertyId);
+            if (boolProperty != null)
+            {
+                boolProperty.Value = newValue;
+            }
+            if (!isAddingItem)
+            {
+                await SaveItem();
+            }
+        }
+    }
+
+    private void ItemFacadeOnItemTypesUpdated(object? sender, List<ItemTypeDto> e)
+    {
+        ItemType = e.FirstOrDefault(type => type.Id == ItemTypeId);
+
+        StateHasChanged();
+    }
+
+    private async Task<IEnumerable<ItemDto>> SearchItemThroughConnection(string itemType, string value, CancellationToken token)
+    {
+        if (string.IsNullOrEmpty(value))
+            return ItemFacade.Items[itemType]
+                .Where(x => !CurrentItem.ChildConnections.Select(z => z.ChildItemId).Contains(x.Id));
+        return ItemFacade.Items[itemType]
+            .Where(x => !CurrentItem.ChildConnections.Select(z => z.ChildItemId).Contains(x.Id))
+            .Where(x => x.Name.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+}
+
+<style>
+    .selected {
+        background-color: #1E88E5 !important;
+    }
+    .selected > td {
+        color: white !important;
+    }
+    .selected > td .mud-input {
+        color: white !important;
+    }
+</style>

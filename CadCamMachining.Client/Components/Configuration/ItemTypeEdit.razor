@@ -1,0 +1,152 @@
+﻿@page "/itemtype/edit/{Id}"
+@inject NavigationManager NavigationManager
+@inject ItemFacade ItemFacade;
+@inherits LayoutComponentBase
+@attribute [Authorize]
+
+@code
+{
+    [Parameter]
+    public string Id { get; set; }
+
+    private ItemTypeDto _itemTypeDto = new ItemTypeDto();
+
+    private string _selectedChildItemTypeId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (ItemFacade.ItemTypes.Count == 0)
+        {
+            await ItemFacade.GetItemTypesAsync();
+        }
+        if (Id != "0")
+        {
+            _itemTypeDto = ItemFacade.ItemTypes[Id];
+        }
+    }
+}
+<MudContainer MaxWidth="MaxWidth.Medium">
+    <MudPaper Class="pa-4">
+        <MudGrid>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="_itemTypeDto.Name" Label="Item Type Name" FullWidth="true" />
+            </MudItem>
+            <MudItem xs="12" Class="pa-4">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveItemType">Save</MudButton>
+                <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="Cancel">Cancel</MudButton>
+            </MudItem>
+            @if (_itemTypeDto.Id != string.Empty)
+            {
+                <MudItem xs="12">
+                <MudTypography Variant="H5">Properties</MudTypography>
+            </MudItem>
+            <MudItem xs="12">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddProperty">Add Property</MudButton>
+            </MudItem>
+            <MudItem xs="12">
+                <MudTable Items="_itemTypeDto.Properties" Hover="true">
+                    <HeaderContent>
+                        <MudTh>Name</MudTh>
+                        <MudTh>Type</MudTh>
+                        <MudTh>Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Name">@context.Name</MudTd>
+                        <MudTd DataLabel="Type">@context.PropertyType.ToString()</MudTd>
+                        <MudTd DataLabel="Actions">
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="@(() => EditProperty(context.Id))">Edit</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small" OnClick="@(() => DeleteProperty(context.Id))">Delete</MudButton>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudItem>
+            <MudSpacer/>
+            <MudItem xs="12">
+                <MudTypography Variant="H5">Connections</MudTypography>
+            </MudItem>
+            <MudItem xs="12">
+                <MudSelect @bind-Value="_selectedChildItemTypeId" Label="Select Child Item Type" FullWidth="true">
+                    @foreach (var itemType in ItemFacade.ItemTypes.Values)
+                    {
+                        <MudSelectItem Value="@itemType.Id">@itemType.Name</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddConnection">Add Connection</MudButton>
+            </MudItem>
+            <MudItem xs="12">
+                <MudTable Items="_itemTypeDto.ChildConnections" Hover="true">
+                    <HeaderContent>
+                        <MudTh>Child Item Type</MudTh>
+                        <MudTh>Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Child Item Type">@ItemFacade.ItemTypes[@context.ChildItemTypeId].Name</MudTd>
+                        <MudTd DataLabel="Actions">
+                            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small" OnClick="@(() => RemoveConnection(context.ChildItemTypeId))">Remove</MudButton>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudItem>
+            }
+        </MudGrid>
+    </MudPaper>
+</MudContainer>
+
+@code {
+
+    private async void SaveItemType()
+    {
+        Console.WriteLine($"Saving ItemType: {_itemTypeDto.Id}");
+        if (_itemTypeDto.Id == string.Empty)
+        {
+            await ItemFacade.CreateItemType(_itemTypeDto);
+        }
+        else
+        {
+            await ItemFacade.UpdateItemType(_itemTypeDto);
+        }
+        NavigationManager.NavigateTo("/itemtypes");
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/itemtypes");
+    }
+
+    private async void AddProperty()
+    {
+        NavigationManager.NavigateTo($"/property/edit/0/{_itemTypeDto.Id}");
+    }
+
+    private void EditProperty(string propertyId)
+    {
+        Console.WriteLine($"PropertyId: {propertyId}");
+        Console.WriteLine($"ItemTypeId: {_itemTypeDto.Id}");
+        NavigationManager.NavigateTo($"/property/edit/{propertyId}/{_itemTypeDto.Id}");
+    }
+
+    private void DeleteProperty(string propertyId)
+    {
+        _itemTypeDto.Properties = _itemTypeDto.Properties.Where(p => p.Id != propertyId).ToList();
+    }
+
+    private void AddConnection()
+    {
+        if (_itemTypeDto.ChildConnections.Any(x => x.ChildItemTypeId == _selectedChildItemTypeId))
+        {
+            return;
+        }
+
+        var connection = new ItemTypeConnectionDto
+        {
+            ParentItemTypeId = _itemTypeDto.Id,
+            ChildItemTypeId = _selectedChildItemTypeId,
+        };
+        _itemTypeDto.ChildConnections.Add(connection);
+    }
+
+    private void RemoveConnection(string connectionId)
+    {
+        _itemTypeDto.ChildConnections.RemoveAll(x => x.ChildItemTypeId == connectionId);
+    }
+}

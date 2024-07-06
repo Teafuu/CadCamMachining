@@ -1,8 +1,8 @@
 ﻿@inherits LayoutComponentBase
-@inject NavigationManager navigationManager
-@inject IdentityAuthenticationStateProvider authStateProvider
-
-<MudThemeProvider IsDarkMode="true" />
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
 
 <div class="page">
     <AuthorizeView>
@@ -19,13 +19,3 @@
         </NotAuthorized>
     </AuthorizeView>
 </div>
-
-
-@code {
-
-    async Task LogoutClick()
-    {
-        await authStateProvider.Logout();
-        navigationManager.NavigateTo("/login");
-    }
-}

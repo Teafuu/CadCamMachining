@@ -1,8 +1,14 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using AspNetCore.Identity.MongoDbCore.Models;
+using MongoDbGenericRepository.Attributes;
 
 namespace CadCamMachining.Server.Models;
 
-public class ApplicationUser : IdentityUser<Guid>
+[CollectionName("Users")]
+public class ApplicationUser : MongoIdentityUser<Guid>
 {
-    public ICollection<Order>? Orders { get; set; } = new List<Order>();
+}
+
+[CollectionName("Roles")]
+public class ApplicationRole : MongoIdentityRole<Guid>
+{
 }

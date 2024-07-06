@@ -1,0 +1,78 @@
+﻿@using System.Reflection.Metadata.Ecma335
+@inject ItemFacade ItemFacade
+@inject LayoutFacade LayoutFacade
+@inject ILogger<DockManager> Logger
+@attribute [Authorize]
+
+@code
+{
+    private ICollection<ItemTypeDto> itemTypes = new List<ItemTypeDto>();
+
+    private MudDropContainer<ComponentDto> dropContainer;
+
+    private LayoutDto selectedLayout;
+
+    protected override async Task OnInitializedAsync()
+    {
+        itemTypes = await ItemFacade.GetItemTypesAsync();
+        var layouts = await LayoutFacade.GetLayouts();
+        LayoutFacade.LayoutSelected += HandleLayoutSelected;
+        selectedLayout = layouts?.FirstOrDefault() ?? null;
+    }
+}
+
+@if (selectedLayout != null)
+{
+    <MudDropContainer @ref="dropContainer" T="ComponentDto" Items="selectedLayout.Components.OrderBy(x => x.Index)" ItemsSelector="@((item, dropzone) => item.DropzoneIdentifier == dropzone)" ItemDropped="ItemUpdated" Class="d-flex flex-wrap flex-grow-1">
+        <ChildContent>
+            <MudDropZone AllowReorder="false" CanDrop="CanDrop" T="ComponentDto" Identifier="1" Class="rounded mud-background-gray pa-4 flex-grow-1">
+            </MudDropZone>
+            <MudDropZone AllowReorder="false" CanDrop="CanDrop" T="ComponentDto" Identifier="2" Class="rounded mud-background-gray pa-4 flex-grow-1">
+            </MudDropZone>
+        </ChildContent>
+        <ItemRenderer
+            Context="item">
+            <MudContainer Class="pa-1 no-cursor-change">
+                @RenderDropItem(item)
+            </MudContainer>
+        </ItemRenderer>
+    </MudDropContainer>
+}
+
+@code {
+    private bool CanDrop(ComponentDto component) => false;
+
+    private void HandleLayoutSelected(object sender, LayoutDto layout)
+    {
+        Console.WriteLine($"Setting layout to: {layout.Name}");
+        selectedLayout = layout;
+        StateHasChanged();
+        dropContainer?.Refresh();
+    }
+    private void ItemUpdated(MudItemDropInfo<ComponentDto> dropItem)
+    {
+        dropItem.Item.DropzoneIdentifier = dropItem.DropzoneIdentifier;
+    }
+
+    private RenderFragment<ComponentDto> RenderDropItem => item => builder =>
+    {
+        if (item.ComponentType == nameof(ItemList))
+        {
+            builder.OpenComponent(0, typeof(ItemList));
+            builder.AddAttribute(1, "ItemTypeId", item.ItemTypeId);
+            builder.CloseComponent();
+        }
+        else if (item.ComponentType == nameof(ItemDetails))
+        {
+            builder.OpenComponent(0, typeof(ItemDetails));
+            builder.AddAttribute(1, "ItemTypeId", item.ItemTypeId);
+            builder.CloseComponent();
+        }
+    };
+
+}
+<style>
+    .no-cursor-change {
+        cursor: default !important;
+    }
+</style>

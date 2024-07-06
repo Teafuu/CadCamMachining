@@ -1,27 +1,55 @@
 ﻿@attribute [Authorize]
 @inherits LayoutComponentBase
-<MudThemeProvider IsDarkMode="true" />
+@inject LayoutFacade LayoutFacade
+@inject NavigationManager navigationManager
+@inject IdentityAuthenticationStateProvider authStateProvider
 
-<AuthorizeView>
+<MudThemeProvider IsDarkMode="true" />
+@code
+{
+    private bool _open = false;
+    private ICollection<LayoutDto> Layouts = new List<LayoutDto>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Layouts = await LayoutFacade.GetLayouts();  
+        LayoutFacade.LayoutsUpdated += HandleLayoutsUpdated;
+    }
+}
+    <AuthorizeView>
     <MudLayout>
         <MudAppBar d-flex align-start flex-grow-1 gap-4>
             <MudIconButton Icon="@Icons.Material.Filled.Home" Color="Color.Inherit" Edge="Edge.Start" Href="#" />
             <MudText>@context.User.Identity.Name</MudText>
+                @foreach (var layout in @Layouts)
+                {
+                    <MudButton Class="d-flex align-end" Color="Color.Inherit" Href="#" OnClick="() => OnLayoutNavigated(layout)">@(layout.Name)</MudButton>
+                }
             <BreadcrumbSeparator/>
-            <MudButton Style="text-transform: none;" StartIcon="@Icons.Material.Filled.Assignment" Href="/OrderOverview" Match="NavLinkMatch.Prefix">Orders</MudButton>
-            <MudButton Style="text-transform: none;" StartIcon="@Icons.Material.Filled.ManageAccounts" Href="/CustomerOverview" Match="NavLinkMatch.Prefix">Customers</MudButton>
-            <MudIconButton Icon="@Icons.Material.Filled.Logout" Class="d-flex align-end" Color="Color.Inherit" Href="Login" />
-
+            <MudIconButton Icon="@Icons.Material.Filled.Assignment" Class="d-flex align-end" Color="Color.Inherit" Href="/itemtypes" />
+            <MudIconButton Icon="@Icons.Material.Filled.Layers" Class="d-flex align-end" Color="Color.Inherit" Href="/layoutcreator" />
+            <MudIconButton Icon="@Icons.Material.Filled.Logout" Class="d-flex align-end" Color="Color.Inherit" OnClick="LogoutClick"/>
         </MudAppBar>
     </MudLayout>
 </AuthorizeView>
 
 @code
 {
-    private bool _open = false;
-
-    private void ToggleDrawer()
+    private void HandleLayoutsUpdated(object sender, List<LayoutDto> updatedLayouts)
     {
-        _open = !_open;
+        Layouts = updatedLayouts;
+        StateHasChanged();
+    }
+
+    private void OnLayoutNavigated(LayoutDto layout)
+    {
+        LayoutFacade.SelectLayout(layout);
+    }
+
+
+    async Task LogoutClick()
+    {
+        await authStateProvider.Logout();
+        navigationManager.NavigateTo("/login");
     }
 }
