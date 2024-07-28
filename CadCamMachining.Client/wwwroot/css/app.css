@@ -9,12 +9,9 @@ h1:focus {
 }
 
 a, .btn-link {
-    color: #0071c1;
 }
 
 .btn-primary {
-    color: #fff;
-    background-color: #1b6ec2;
     border-color: #1861ac;
 }
 
@@ -96,6 +93,17 @@ a, .btn-link {
     inset: calc(20vh + 3.25rem) 0 auto 0.2rem;
 }
 
-    .loading-progress-text:after {
-        content: var(--blazor-load-percentage-text, "Loading");
-    }
+.loading-progress-text:after {
+    content: var(--blazor-load-percentage-text, "Loading");
+}
+
+.label-h1{
+    font-size: 38px;
+}
+
+.label-h2 {
+    font-size: 20px;
+}
+.label-h3 {
+    font-size: 12px;
+}

@@ -1,5 +1,7 @@
 ﻿@inject NavigationManager navigationManager
-<div class="loader loader-bouncing"><span>Redirecting...</span></div>
+<MudThemeProvider IsDarkMode="true" />
+
+<MudText>Redirecting...</MudText>
 @code{
 
     protected override void OnInitialized()

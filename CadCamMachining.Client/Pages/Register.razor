@@ -5,54 +5,32 @@
 
 <PageTitle>Register</PageTitle>
 
-<h1 class="text-center">
-    Blazor with Identity Sample
-</h1>
+<MudThemeProvider IsDarkMode="true" />
 
-<div class="container mt-md-5">
-    <div class="row justify-content-md-center">
-        <div class="col-sm-6">
-            <div class="card">
-                <div class="card-header">
-                    <h1 class="h2 text-center">Create Account</h1>
-                </div>
-                <div class="card-body">
-                    <EditForm class="form-signin" OnValidSubmit="OnSubmit" Model="registerParameters">
-                        <DataAnnotationsValidator />
+<PageTitle>Login</PageTitle>
 
-                        <div class="form-floating mb-3">
-                            <InputText id="inputUsername" class="form-control" @bind-Value="registerParameters.UserName" autofocus placeholder="Username" />
-                            <label for="inputUsername">User Name</label>
-                            <ValidationMessage For="@(() => registerParameters.UserName)" />
-                        </div>
-
-                        <div class="form-floating mb-3">
-                            <InputText type="password" id="inputPassword" class="form-control" placeholder="Password" @bind-Value="registerParameters.Password" />
-                            <label for="inputPassword">Password</label>
-                            <ValidationMessage For="@(() => registerParameters.Password)" />
-                        </div>
-
-                        <div class="form-floating mb-3">
-                            <InputText type="password" id="inputPasswordConfirm" class="form-control" placeholder="Password Confirmation" @bind-Value="registerParameters.PasswordConfirm" />
-                            <label for="inputPasswordConfirm">Password Confirmation</label>
-                            <ValidationMessage For="@(() => registerParameters.PasswordConfirm)" />
-                        </div>
-
-                        <div class="d-grid gap-2">
-                            <button class="btn btn-lg btn-primary btn-block" type="submit">Create account</button>
-                        </div>
-
-                        <label class="text-danger">@error</label>
-
-                        <NavLink href="login">
-                            <h6 class="font-weight-normal text-center">Already have an account? Click here to login</h6>
-                        </NavLink>
-                    </EditForm>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<MudText Typo="Typo.h2" Align="Align.Center" Class="d-flex justify-center ma-20">Cad Cam Machining</MudText>
+<EditForm OnValidSubmit="OnSubmit" Model="@registerParameters">
+    <DataAnnotationsValidator />
+    <MudGrid Class="d-flex justify-center">
+        <MudItem xs="12" sm="7">
+            <MudCard>
+                <MudCardContent>
+                    <MudTextField Label="Email" Class="mt-3"
+                                  @bind-Value="registerParameters.UserName" For="@(() => registerParameters.UserName)" />
+                    <MudTextField Label="Password" HelperText="Choose a strong password" Class="mt-3"
+                                  @bind-Value="registerParameters.Password" For="@(() => registerParameters.Password)" InputType="InputType.Password" />
+                    <MudTextField Label="Password" HelperText="Confirm your password" Class="mt-3"
+                                  @bind-Value="registerParameters.PasswordConfirm" For="@(() => registerParameters.PasswordConfirm)" InputType="InputType.Password" />
+                    <MudText Color="Color.Error">@error</MudText>
+                </MudCardContent>
+                <MudPaper Class="align-center pa-4 mt-4">
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Register</MudButton>
+                </MudPaper>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</EditForm>
 
 @code {
 

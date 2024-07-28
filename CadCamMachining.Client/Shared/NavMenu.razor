@@ -1,34 +1,55 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">BlazorApp4</a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-    </div>
-</div>
+﻿@attribute [Authorize]
+@inherits LayoutComponentBase
+@inject LayoutFacade LayoutFacade
+@inject NavigationManager navigationManager
+@inject IdentityAuthenticationStateProvider authStateProvider
 
-<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="oi oi-home" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="oi oi-plus" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
-    </nav>
-</div>
+<MudThemeProvider IsDarkMode="true" />
+@code
+{
+    private bool _open = false;
+    private ICollection<LayoutDto> Layouts = new List<LayoutDto>();
 
-@code {
-    private bool collapseNavMenu = true;
-
-    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
-
-    private void ToggleNavMenu()
+    protected override async Task OnInitializedAsync()
     {
-        collapseNavMenu = !collapseNavMenu;
+        Layouts = await LayoutFacade.GetLayouts();  
+        LayoutFacade.LayoutsUpdated += HandleLayoutsUpdated;
+    }
+}
+    <AuthorizeView>
+    <MudLayout>
+        <MudAppBar d-flex align-start flex-grow-1 gap-4>
+            <MudIconButton Icon="@Icons.Material.Filled.Home" Color="Color.Inherit" Edge="Edge.Start" Href="#" />
+            <MudText>@context.User.Identity.Name</MudText>
+                @foreach (var layout in @Layouts)
+                {
+                    <MudButton Class="d-flex align-end" Color="Color.Inherit" Href="#" OnClick="() => OnLayoutNavigated(layout)">@(layout.Name)</MudButton>
+                }
+            <BreadcrumbSeparator/>
+            <MudIconButton Icon="@Icons.Material.Filled.Assignment" Class="d-flex align-end" Color="Color.Inherit" Href="/itemtypes" />
+            <MudIconButton Icon="@Icons.Material.Filled.Layers" Class="d-flex align-end" Color="Color.Inherit" Href="/layoutcreator" />
+            <MudIconButton Icon="@Icons.Material.Filled.Logout" Class="d-flex align-end" Color="Color.Inherit" OnClick="LogoutClick"/>
+        </MudAppBar>
+    </MudLayout>
+</AuthorizeView>
+
+@code
+{
+    private void HandleLayoutsUpdated(object sender, List<LayoutDto> updatedLayouts)
+    {
+        Layouts = updatedLayouts;
+        StateHasChanged();
+    }
+
+    private void OnLayoutNavigated(LayoutDto layout)
+    {
+        LayoutFacade.SelectLayout(layout);
+    }
+
+
+    async Task LogoutClick()
+    {
+        await authStateProvider.Logout();
+        navigationManager.NavigateTo("/login");
     }
 }

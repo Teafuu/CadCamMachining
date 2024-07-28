@@ -1,0 +1,110 @@
+﻿@inject NavigationManager NavigationManager
+@inject ItemFacade ItemFacade;
+@inject ItemSelectionManager ItemSelectionManager;
+@inject ILogger<ItemList> Logger
+@inherits LayoutComponentBase
+@attribute [Authorize]
+
+@code {
+    [Parameter]
+    public string ItemTypeId { get; set; }
+
+    private IEnumerable<ItemDto> items = new List<ItemDto>();
+    private ItemTypeDto? ItemType;
+    private string searchString = string.Empty;
+    protected override async Task OnInitializedAsync()
+    {
+        ItemType = ItemFacade.ItemTypes[ItemTypeId];
+        Logger.LogInformation($"Initializing Item List of type {ItemTypeId} {ItemType.Name}");
+
+        if (ItemType is null)
+        {
+            Logger.LogCritical($"ItemType does not exist: {ItemTypeId}");
+        }
+        await ItemFacade.GetItemsAsync(ItemType);
+
+        items = ItemFacade.Items[ItemTypeId];
+
+        foreach (var item in items)
+        {
+            Console.WriteLine($"Item: {item.Name} {item.ItemTypeId}");
+        }
+
+        ItemFacade.ItemsUpdated += ItemsUpdated;
+        ItemFacade.ItemTypesUpdated += ItemTypesUpdated;
+    }
+}
+
+<MudDataGrid 
+    T="ItemDto" 
+    Items="@items"
+    Hover="true" 
+    MultiSelection="true" 
+    SortMode="SortMode.Single" 
+    Filterable="true" 
+    Hideable="true" 
+    QuickFilter="_quickFilter"
+    RowClick="@RowClickEvent">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">@ItemType.Name</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="searchString" 
+                      Placeholder="Search" 
+                      Adornment="Adornment.Start" 
+                      Immediate="true"
+                      AdornmentIcon="@Icons.Material.Filled.Search" 
+                      IconSize="Size.Medium"
+                      Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <Columns>
+        <PropertyColumn Property="x => x.Name" Title="Name" Sortable="true" />
+        @foreach (var property in ItemType.Properties.OrderBy(x => x.Id))
+        {
+            <PropertyColumn Property="x => GetPropertyValue(x, property.Id)" Title="@property?.Name" />
+        }
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="ItemDto" />
+    </PagerContent>
+</MudDataGrid>
+
+@code {
+
+
+    private void RowClickEvent(DataGridRowClickEventArgs<ItemDto> item)
+    {
+        ItemSelectionManager.SelectItem(item.Item);
+    }
+
+
+    private void ItemsUpdated(object sender, IEnumerable<ItemDto> updatedItems)
+    {
+        StateHasChanged();
+    }
+
+    private void ItemTypesUpdated(object sender, IEnumerable<ItemTypeDto> updatedItemTypes)
+    {
+        StateHasChanged();
+    }
+
+    private Func<ItemDto, bool> _quickFilter => x =>
+    {
+        if (x is null || x?.PropertyValues is null ||x.Name is null) return false;
+
+        if (x.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return x.PropertyValues.Any(x => x is not null && x.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase));
+    };
+
+    private string GetPropertyValue(ItemDto x, string propertyId) // Replace ItemType with the actual type of your items
+    {
+        var propertyValue = x.PropertyValues.FirstOrDefault(p => p.ItemPropertyId == propertyId);
+        return propertyValue?.ToString() ?? string.Empty;
+    }
+
+    private string TblRowStyle(ItemPropertyDto thing, int index)
+    {
+        return $"background: #D3D3D3";
+    }
+}

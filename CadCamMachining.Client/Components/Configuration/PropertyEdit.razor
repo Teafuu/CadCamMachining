@@ -1,0 +1,141 @@
+﻿@page "/property/edit/{PropertyId}/{ItemTypeId}"
+@inject NavigationManager NavigationManager
+@inject ItemFacade ItemFacade
+@inherits LayoutComponentBase
+@attribute [Authorize]
+
+@code
+{
+    [Parameter]
+    public string PropertyId { get; set; }
+
+    [Parameter]
+    public string ItemTypeId { get; set; }
+
+    ItemPropertyDto ItemPropertyDto;
+
+    private PropertyTypeDto SelectedPropertyType;
+    private string PropertyName;
+    private ItemTypeDto ItemType;
+    private bool NewProperty = false;
+    private string NewOptionText;
+
+    // default values
+    private List<string> DefaultEnumOptions = new List<string>();
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        if (ItemFacade.ItemTypes.Count == 0)
+        {
+            await ItemFacade.GetItemTypesAsync();
+        }
+
+        ItemType = ItemFacade.ItemTypes[ItemTypeId];
+
+        if (PropertyId != "0")
+        {
+            // Load the property by PropertyId
+            ItemPropertyDto = ItemType.Properties.FirstOrDefault(x => x.Id == PropertyId); // Replace with actual data loading
+            PropertyName = ItemPropertyDto.Name;
+            SelectedPropertyType = ItemPropertyDto.PropertyType;
+            if (ItemPropertyDto is EnumPropertyDto enumPropertyType)
+            {
+                DefaultEnumOptions = enumPropertyType.Options.ToList();
+            }
+        }
+        else
+        {
+            NewProperty = true;
+            SelectedPropertyType = PropertyTypeDto.String;
+        }
+    }
+}
+
+<MudContainer MaxWidth="MaxWidth.Medium">
+    <MudPaper Class="pa-4">
+        <MudGrid>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="PropertyName" Label="Property Name" FullWidth="true" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudSelect T="PropertyTypeDto" @bind-Value="SelectedPropertyType" Label="Property Type" FullWidth="true">
+                    <MudSelectItem Value="PropertyTypeDto.String">Text</MudSelectItem>
+                    <MudSelectItem Value="PropertyTypeDto.Enum">Multiple Choice</MudSelectItem>
+                    <MudSelectItem Value="PropertyTypeDto.Bool">Bool</MudSelectItem>
+                    <MudSelectItem Value="PropertyTypeDto.DateTime">DateTime</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            @if (SelectedPropertyType == PropertyTypeDto.Enum)
+            {
+                <MudItem xs="12" >
+                    <MudTextField T="string" @bind-Value="@NewOptionText" HelperText="Adds an option" />
+                    <MudButton OnClick="AddOption" Variant="Variant.Filled" Color="Color.Secondary">Add</MudButton>
+                    <MudTable Items="DefaultEnumOptions" Hover="true" Bordered="true" >
+                        <HeaderContent>
+                            <MudTh>Item</MudTh>
+                            <MudTh>Actions</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Item">@context</MudTd>
+                            <MudTd DataLabel="Actions">
+                                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="@(() => RemoveItem(context))">Remove</MudButton>
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+
+                </MudItem>
+            }
+            <MudItem xs="12" Class="pa-4">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveProperty">Save</MudButton>
+                <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="Cancel">Cancel</MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+</MudContainer>
+
+@code 
+{
+    private async void SaveProperty()
+    {
+        if (NewProperty)
+        {
+            ItemPropertyDto = GetPropertyDto(SelectedPropertyType);
+            ItemType.Properties.Add(ItemPropertyDto);
+        }
+        else
+        {
+            ItemPropertyDto.Name = PropertyName;
+            if (ItemPropertyDto is EnumPropertyDto enumProperty)
+            {
+                enumProperty.Options = DefaultEnumOptions;
+            }
+        }
+        await ItemFacade.UpdateItemType(ItemType);
+        NavigationManager.NavigateTo($"/itemtype/edit/{ItemTypeId}");
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo($"/itemtype/edit/{ItemTypeId}");
+    }
+
+    private void AddOption()
+    {
+        DefaultEnumOptions.Add(NewOptionText);
+        NewOptionText = string.Empty;
+    }
+    private void RemoveItem(string item)
+    {
+        DefaultEnumOptions.Remove(item);
+    }
+
+    private ItemPropertyDto GetPropertyDto(PropertyTypeDto type) => type switch
+    {
+        PropertyTypeDto.Bool => new BoolPropertyDto { Name = PropertyName, PropertyType = PropertyTypeDto.Bool },
+        PropertyTypeDto.DateTime => new DateTimePropertyDto { Name = PropertyName, PropertyType = PropertyTypeDto.DateTime },
+        PropertyTypeDto.Enum => new EnumPropertyDto() { Name = PropertyName, PropertyType = PropertyTypeDto.Enum, Options = DefaultEnumOptions },
+        PropertyTypeDto.String => new StringPropertyDto() { Name = PropertyName, PropertyType = PropertyTypeDto.String },
+        _ => throw new InvalidDataException()
+    };
+}

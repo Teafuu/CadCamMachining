@@ -1,0 +1,69 @@
+﻿@page "/itemtypes"
+@inject NavigationManager NavigationManager
+@inject ItemFacade ItemFacade;
+@inherits LayoutComponentBase
+@attribute [Authorize]
+
+@code
+{
+    private ICollection<ItemTypeDto> itemTypes = new List<ItemTypeDto>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        itemTypes = await ItemFacade.GetItemTypesAsync();
+        
+        ItemFacade.ItemTypesUpdated += HandleItemTypesUpdated;
+    }
+}
+
+<MudContainer MaxWidth="MaxWidth.Medium">
+    <MudPaper Class="pa-4">
+        <MudGrid>
+            <MudItem xs="12">
+                <MudTypography Variant="H4">Item Types</MudTypography>
+            </MudItem>
+            <MudItem xs="12" Class="pa-4">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddItemType">Add Item Type</MudButton>
+            </MudItem>
+            <MudItem xs="12">
+                <MudTable Items="itemTypes" Hover="true">
+                    <HeaderContent>
+                        <MudTh>Name</MudTh>
+                        <MudTh>Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Name">@context.Name</MudTd>
+                        <MudTd DataLabel="Actions">
+                                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="@(() => EditItemType(context.Id))">Edit</MudButton>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small" OnClick="@(() => DeleteItemType(context.Id))">Delete</MudButton>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+</MudContainer>
+
+@code 
+{
+    private void HandleItemTypesUpdated(object sender, ICollection<ItemTypeDto> updatedItemTypes)
+    {
+        itemTypes = updatedItemTypes;
+        StateHasChanged();
+    }
+
+    private void AddItemType()
+    {
+        NavigationManager.NavigateTo("/itemtype/edit/0");
+    }
+
+    private void EditItemType(string id)
+    {
+        NavigationManager.NavigateTo($"/itemtype/edit/{id}");
+    }
+
+    private async Task DeleteItemType(string id)
+    {
+        await ItemFacade.DeleteItemType(id);
+    }
+}
